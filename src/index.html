@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-  <title>Auto-Rebalancer</title>
+  <title>Farm Optimizer</title>
   <!-- <link rel="icon" type="image/png" href="metamask-fox.svg"> -->
 
   <!-- Bootstrap -->
@@ -28,7 +28,7 @@
 <body>
   <main class="container-fluid">
     <header>
-      <h1 class="text-center">Auto-Rebalancer</h1>
+      <h1 class="text-center">Farm Optimizer</h1>
     </header>
 
     <!-- Part 1 Setting up Basic Actions and Status-->
@@ -57,16 +57,20 @@
             <div class="card-body">
               <!-- <h4 class="card-title">Basic Actions</h4> -->
               <button class="btn btn-primary btn-lg btn-block mb-3" id="connectButton" disabled></button>
-              <button class="btn btn-primary btn-lg btn-block mb-3" id="getAccounts">Display my address</button>
-              <button class="btn btn-primary btn-lg btn-block mb-3" id="getBalances">Display my coin balances</button>
-              <button class="btn btn-primary btn-lg btn-block mb-3" id="getUSDBalances">Display USD balances</button>
-              <p class="info-text alert alert-secondary">Your account no: <span id="getAccountsResult"></span></p>
-              <p class="info-text alert alert-secondary">Your WMATIC balance: <span id="getWMATICResult"></span> in USD: <span id="WMATICInUsd"></span></p>
-              <p class="info-text alert alert-secondary">Your USDC balance: <span id="getUSDCResult"></span></p>
-              <p class="info-text alert alert-secondary">Your WBTC balance: <span id="getWBTCResult"></span> in USD: <span id="WBTCInUsd"></span></p>
-              <p class="info-text alert alert-secondary">Your WETH balance: <span id="getWETHResult"></span> in USD: <span id="WETHInUsd"></span></p>
-              <p class="info-text alert alert-secondary">Your USD total: <span id="TOTALInUsd"></span> </p>
-              <button class="btn btn-primary btn-lg btn-block mb-3" id="rebalance">Rebalance</button>
+              <!-- <button class="btn btn-primary btn-lg btn-block mb-3" id="getAccounts">Display my address</button> -->
+              <input placeholder="Enter LP contract address" type="value" id="LPcontract"> 
+              <input placeholder="Enter no of LP tokens" type="value" id="LPtokens"> 
+              <button class="btn btn-primary btn-lg btn-block mb-3" id="getBalances">Display Liquidity Pool Info</button>
+              <!-- <button class="btn btn-primary btn-lg btn-block mb-3" id="getUSDBalances">Display USD balances</button> -->
+              <!-- <p class="info-text alert alert-secondary">Your account no: <span id="getAccountsResult"></span></p> -->
+              <p class="info-text alert alert-secondary">Reserves Token0: <span id="getWMATICResult"></span>  <span id="WMATICInUsd"></span></p>
+              <p class="info-text alert alert-secondary">Total Supply: <span id="getUSDCResult"></span></p>
+              <p class="info-text alert alert-secondary">Reserves Token1: <span id="getWBTCResult"></span>  <span id="WBTCInUsd"></span></p>
+              <p class="info-text alert alert-secondary">YELD/MATIC: <span id="getWETHResult"></span>  <span id="WETHInUsd"></span></p>
+              <p class="info-text alert alert-secondary">USD value of LP: <span id="TOTALInUsd"></span> </p>
+              <p class="info-text alert alert-secondary">USD value of my share: <span id="myshareInUsd"></span> </p>
+
+              <!-- <button class="btn btn-primary btn-lg btn-block mb-3" id="rebalance">Rebalance</button> -->
             </div>
           </div>
         </div>
@@ -124,8 +128,8 @@
             </div>
           </div> -->
         </div>
-        <button class="btn btn-primary btn-lg btn-block mb-3" id="confirmApprove" disabled = "true">Approve?</button>
-        <button class="btn btn-primary btn-lg btn-block mb-3" id="confirmSwap" disabled = "true">Confirm Swap?</button>
+        <!-- <button class="btn btn-primary btn-lg btn-block mb-3" id="confirmApprove" disabled = "true">Approve?</button>
+        <button class="btn btn-primary btn-lg btn-block mb-3" id="confirmSwap" disabled = "true">Confirm Swap?</button> -->
 
         <div class="alert alert-success" role="alert" id="swapStarted" style="display:none">
 

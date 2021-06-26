@@ -1,10 +1,11 @@
-const USDC_ADDRESS = "0x2791bca1f2de4661ed88a30c99a7a9449aa84174"
-const WBTC_ADDRESS = "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6"
+const SS_YELD_MATIC_ADDRESS = "0xdD650C8d274474FF1af1152B3B27f2702AcA8a98"
+const WS_FISH_MATIC_ADDRESS = "0x44825bf3b74695bd72ed247d62dd755e67b7ed87"
 const WETH_ADDRESS = "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
 const WMATIC_ADDRESS = "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
 
 const QUICKSWAP_ROUTER = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"
 const SUSHISWAP_ROUTER = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"
+const WAULT_ROUTER = "0x3a1D87f206D12415f5b0A33E786967680AAb4f6d"
 
 const MATIC_USD_ORACLE = "0xAB594600376Ec9fD91F8e885dADF0CE036862dE0"
 const BTC_USD_ORACLE = "0xc907E116054Ad103354f2D350FD2514433D57F6f"
@@ -49,53 +50,70 @@ function startApp(provider) {
   // const getBalanceResult = document.getElementById('getBalanceResult');
 
   // var balance;
-  var usdc_bal;
+  var total_supply_LP;
   var wbtc_bal;
   var weth_bal;
-  var wmatic_bal;
-  
+  var reserves;
+
   var _wmatic_in_usd;
   var _wbtc_in_usd;
   var _weth_in_usd;
-  
+
   var eth_usd_rate;
   var wbtc_usd_rate;
   var matic_usd_rate;
   var usdc_usd_rate = 1;
-  
+
   var array_coins;
   var inputs;
-
+  var exchangeRate;
+  var total_pool_value;
 
   //Eth_Accounts-getAccountsButton
-  getAccountsButton.addEventListener('click', async () => {
-    //we use eth_accounts because it returns a list of addresses owned by us.
-    const accounts = await ethereum.request({ method: 'eth_accounts' });
-    user = accounts[0]; //should I declare this here or lower down as current account?
-    //We take the first address in the array of addresses and display it
-    getAccountsResult.innerHTML = user || 'Not able to get accounts';
-  });
+  // getAccountsButton.addEventListener('click', async () => {
+  //   //we use eth_accounts because it returns a list of addresses owned by us.
+  //   const accounts = await ethereum.request({ method: 'eth_accounts' });
+  //   user = accounts[0]; //should I declare this here or lower down as current account?
+  //   //We take the first address in the array of addresses and display it
+  //   getAccountsResult.innerHTML = user || 'Not able to get accounts';
+  // });
 
   getBalancesButton.addEventListener('click', async () => {
+    const accounts = await ethereum.request({ method: 'eth_accounts' });
+    user = accounts[0]; //should I declare this here or lower down as current account?
     // balance = await provider.getBalance(user); //returns a BigNumber
     // console.log(balance.toString());
 
-    wmatic_bal = await getBalance(WMATIC_ADDRESS);
-    getWMATICResult.innerHTML = wmatic_bal.toFixed(5) || 'Not able to get accounts'; //what if wmatic_bal undefined?
+    var LP_contract = $("#LPcontract").val()
+    var my_LP_tokens = $("#LPtokens").val()
 
-    usdc_bal = await getBalance(USDC_ADDRESS);
-    getUSDCResult.innerHTML = usdc_bal.toFixed(5) || 'Not able to get accounts';
+    reserves = await getReserves(LP_contract);
+    console.log(reserves)
+    getWMATICResult.innerHTML = `${parseFloat(ethers.utils.formatEther(reserves[0])).toFixed(4)} MATIC` || 'Not able to get accounts'; //what if reserves undefined?
 
-    wbtc_bal = await getBalance(WBTC_ADDRESS);
-    getWBTCResult.innerHTML = wbtc_bal.toFixed(5) || 'Not able to get accounts';
+    total_supply_LP = await getTotalSupply(LP_contract);
+    console.log(total_supply_LP)
+    getUSDCResult.innerHTML = `${parseFloat(ethers.utils.formatEther(total_supply_LP)).toFixed(4)} LP tokens` || 'Not able to get accounts';
 
-    weth_bal = await getBalance(WETH_ADDRESS);
-    getWETHResult.innerHTML = weth_bal.toFixed(5) || 'Not able to get accounts';
+    getWBTCResult.innerHTML = `${parseFloat(ethers.utils.formatEther(reserves[1])).toFixed(4)} YELD` || 'Not able to get accounts';
+
+    exchangeRate = reserves[0].div(reserves[1])
+    getWETHResult.innerHTML = exchangeRate || 'Not able to get accounts';
+    
+    total_pool_value = ethers.utils.formatEther(reserves[0]) *1.12 + ethers.utils.formatEther(reserves[1])*exchangeRate*1.12
+    TOTALInUsd.innerHTML = `$ ${ethers.utils.commify(parseFloat(total_pool_value).toFixed(2))}` || 'Not able to get accounts'
+    $("#ourButton").click(function(){ 
+      var my_LP_tokens = $("#LPtokens").val();    
+      });
+
+    var my_share = my_LP_tokens*10**18/total_supply_LP*total_pool_value;
+    myshareInUsd.innerHTML = `$ ${ethers.utils.commify(parseFloat(my_share).toFixed(2))}`;
+
   });
 
   getUSDBalancesButton.addEventListener('click', async () => {
     matic_usd_rate = await getExchangeRate(MATIC_USD_ORACLE) //assume for now matic = wmatic 1:1
-    _wmatic_in_usd = wmatic_bal * matic_usd_rate
+    _wmatic_in_usd = reserves * matic_usd_rate
     WMATICInUsd.innerHTML = _wmatic_in_usd.toFixed(2) || 'Not able to get accounts';
 
     wbtc_usd_rate = await getExchangeRate(BTC_USD_ORACLE)
@@ -106,8 +124,7 @@ function startApp(provider) {
     _weth_in_usd = weth_bal * eth_usd_rate
     WETHInUsd.innerHTML = _weth_in_usd.toFixed(2) || 'Not able to get accounts'
 
-    total_in_usd = _wmatic_in_usd + _wbtc_in_usd + _weth_in_usd + usdc_bal
-    TOTALInUsd.innerHTML = total_in_usd.toFixed(2) || 'Not able to get accounts'
+
   })
 
   rebalanceButton.addEventListener('click', async () => {
@@ -128,7 +145,7 @@ function startApp(provider) {
     var diff_wmatic = _wmatic_in_usd - target_per_asset
     var diff_wbtc = _wbtc_in_usd - target_per_asset
     var diff_weth = _weth_in_usd - target_per_asset
-    var diff_usdc = usdc_bal - target_per_asset
+    var diff_usdc = total_supply_LP - target_per_asset
 
     var usdc_decimals = await getDecimals(USDC_ADDRESS)
     var wmatic_decimals = await getDecimals(WMATIC_ADDRESS)
@@ -136,8 +153,8 @@ function startApp(provider) {
     var weth_decimals = await getDecimals(WETH_ADDRESS)
 
     //create a coin object for each of our 4 assets - NOTE have to fix MATIC somehow...
-    var USDC = new Coin("USDC", USDC_ADDRESS, usdc_decimals, usdc_bal, usdc_bal, diff_usdc, usdc_usd_rate);
-    var WMATIC = new Coin("WMATIC", WMATIC_ADDRESS, wmatic_decimals, wmatic_bal, _wmatic_in_usd, diff_wmatic, matic_usd_rate); //this one will have to be different somehow
+    var USDC = new Coin("USDC", USDC_ADDRESS, usdc_decimals, total_supply_LP, total_supply_LP, diff_usdc, usdc_usd_rate);
+    var WMATIC = new Coin("WMATIC", WMATIC_ADDRESS, wmatic_decimals, reserves, _wmatic_in_usd, diff_wmatic, matic_usd_rate); //this one will have to be different somehow
     var WBTC = new Coin("WBTC", WBTC_ADDRESS, wbtc_decimals, wbtc_bal, _wbtc_in_usd, diff_wbtc, wbtc_usd_rate);
     var WETH = new Coin("WETH", WETH_ADDRESS, weth_decimals, weth_bal, _weth_in_usd, diff_weth, eth_usd_rate);
 
@@ -150,49 +167,59 @@ function startApp(provider) {
     });
 
     // get the inputs for the swaps, perform the swaps, update the array each time
-    // do {
-    inputs = getSwapInputs(array_coins); //balances 1 coin to the portfolio dollar average, and returns the remaining coins as an array
-    //check if router is approved to spend tokens
-    console.log(inputs);
-    var approvedAmount = await allowance(inputs[2][0], SUSHISWAP_ROUTER) //input token and router addresses
-    console.log(approvedAmount)
-    //if not, must approve it:
-    if (approvedAmount.lt(inputs[0])) { //less than
-      console.log('need to get approval');
-      window.alert("Time to get approval!");
-      //approve router to spend input tokens
-      document.getElementById('confirmApprove').disabled = false;
-      // and alert user to click the button, or make the button actually pop up!
-    } else {
-      //if approval already exists, go straight to the swap
-      window.alert("Time to do the swap!");
-      document.getElementById('confirmSwap').disabled = false;
-    }
-    // } while (array_coins.length > 1) //we repeat the above until we're down to just one coin in the array
-  })
 
-  confirmApprovalButton.addEventListener('click', async () => {
-    document.getElementById('confirmApprove').disabled = true;
-    //ask for approval
-    var approved = await giveApproval(inputs[2][0], SUSHISWAP_ROUTER, inputs[0]); //token_address, router_address, amountIn
-    //create a listener for the approval confirmation
-    var tokenContract = new ethers.Contract(inputs[2][0], abi, signer);
-    var filter = tokenContract.filters.Approval(user, null);
-    tokenContract.once(filter, (owner, spender, value, event) => {
-      console.log('Tokens approved');
-      window.alert("Time to do the swap!");
-      document.getElementById('confirmSwap').disabled = false;
-    })
-  })
+    startSwap(array_coins);
 
-  confirmSwapButton.addEventListener('click', async () => {
-    document.getElementById('confirmSwap').disabled = true;
-    //perform the swap
-    var swap_result = await swap(inputs[0], inputs[1], inputs[2], user, Date.now() + 1111111111111);
-    if (swap_result) { //I could modify this to listen for tx confirmation?
-      array_coins = updateArray(array_coins);
-    }
+    // var tokenContract = new ethers.Contract(inputs[2][0], abi, signer);
+    // var filter = tokenContract.filters.Transfer(null, user);
+    // tokenContract.once(filter, async (owner, spender, value, event) => {
+    //   console.log('Swap 1 done');
+    //   startSwap(array_coins)
+    // })
+
   })
+}
+
+async function startSwap(array_coins) {
+  var inputs = getSwapInputs(array_coins); //balances 1 coin to the portfolio dollar average, and returns the remaining coins as an array
+  console.log(inputs);
+
+  //find out what router is approved to spend for this user (if anything)
+  var approvedAmount = await allowance(inputs[2][0], SUSHISWAP_ROUTER) //input token and router addresses
+  console.log(approvedAmount)
+
+  //if not, must approve it:
+  if (approvedAmount.lt(inputs[0])) { //less than
+    console.log('need to get approval');
+    //ask user to confirm asking for approval
+    if (window.confirm("Time to get approval!")) {
+      //ask for approval
+      var approved = await giveApproval(inputs[2][0], SUSHISWAP_ROUTER, inputs[0]); //token_address, router_address, amountIn
+      //create a listener for the approval confirmation
+      var tokenContract = new ethers.Contract(inputs[2][0], abi, signer);
+      var filter = tokenContract.filters.Approval(user, null);
+      tokenContract.once(filter, async (owner, spender, value, event) => {
+        console.log('Tokens approved');
+        if (window.confirm("Time to do the swap!")) {
+          //perform the swap
+          var swap_result = await swap(inputs[0], inputs[1], inputs[2], user, Date.now() + 1111111111111);
+          if (swap_result) { //I could modify this to listen for tx confirmation?
+            array_coins = updateArray(array_coins);
+          }
+        };
+      })
+    }
+  } else {
+    //if approval already exists, go straight to the swap
+    console.log('we got here!')
+    if (confirm("Time to do the swap!")) {
+      //perform the swap
+      var swap_result = await swap(inputs[0], inputs[1], inputs[2], user, Date.now() + 1111111111111);
+      if (swap_result) { //I could modify this to listen for tx confirmation?
+        array_coins = updateArray(array_coins);
+      }
+    }
+  }
 }
 
 /**********************************************************/
@@ -294,6 +321,31 @@ async function getBalance(token_address) {
     console.log(error)
   }
 }
+
+async function getTotalSupply(pair_address) {
+  // create a new instance of a contract - in web3.js >1.0.0, will have to use "new web3.eth.Contract" (uppercase C)
+  var pairContract = new ethers.Contract(pair_address, pair_abi, signer)
+  // get the balance of our user in that token
+  try {
+    var totalSupply = await pairContract.totalSupply();
+    return totalSupply;
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+async function getReserves(pair_address) {
+  // create a new instance of a contract - in web3.js >1.0.0, will have to use "new web3.eth.Contract" (uppercase C)
+  var pairContract = new ethers.Contract(pair_address, pair_abi, signer)
+  // get the balance of our user in that token
+  try {
+    var Reserves = await pairContract.getReserves();
+    return Reserves;
+  } catch (error) {
+    console.log(error)
+  }
+}
+
 
 async function getExchangeRate(oracle_address) {
   var oracle = new ethers.Contract(oracle_address, CHAINLINK_ORACLE_ABI, provider);
