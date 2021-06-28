@@ -95,23 +95,29 @@ function startApp(provider) {
     
     if (token0_symbol == "WMATIC" || "MATIC") {
       usd_rate = await getExchangeRate(MATIC_USD_ORACLE);
+      usd_rate = (usd_rate.toNumber())/10**8;
+      total_pool_value = ethers.utils.formatEther(reserves[0]) *usd_rate *2;
     } else if (token0_symbol == "WBTC" || "BTC") {
       usd_rate = await getExchangeRate(BTC_USD_ORACLE);
+      usd_rate = (usd_rate.toNumber())/10**8;
+      total_pool_value = ethers.utils.formatEther(reserves[0]) *usd_rate *2;
     } else if (token0_symbol == "WETH" || "ETH") {
       usd_rate = await getExchangeRate(ETH_USD_ORACLE);
+      usd_rate = (usd_rate.toNumber())/10**8;
+      total_pool_value = ethers.utils.formatEther(reserves[0]) *usd_rate *2;
     } else if (token1_symbol == "WMATIC" || "MATIC") {
       usd_rate = await getExchangeRate(MATIC_USD_ORACLE);
-      usd_rate = 1/usd_rate;
+      usd_rate = (usd_rate.toNumber())/10**8;
+      total_pool_value = ethers.utils.formatEther(reserves[1]) *usd_rate *2;
     } else if (token1_symbol == "WBTC" || "BTC") {
       usd_rate = await getExchangeRate(BTC_USD_ORACLE);
-      usd_rate = 1/usd_rate;
+      usd_rate = (usd_rate.toNumber())/10**8;
+      total_pool_value = ethers.utils.formatEther(reserves[1]) *usd_rate *2;
     } else if (token1_symbol == "WETH" || "ETH") {
       usd_rate = await getExchangeRate(ETH_USD_ORACLE);
-      usd_rate = 1/usd_rate;
+      usd_rate = (usd_rate.toNumber())/10**8;
+      total_pool_value = ethers.utils.formatEther(reserves[1]) *usd_rate *2;
     }
-    usd_rate = (usd_rate.toNumber())/10**8;
-
-    total_pool_value = ethers.utils.formatEther(reserves[0]) *usd_rate + ethers.utils.formatEther(reserves[1])*exchangeRate*usd_rate;
     TOTALInUsd.innerHTML = `$ ${ethers.utils.commify(parseFloat(total_pool_value).toFixed(2))}` || 'Not able to get accounts'
     
     $("#ourButton").click(function(){ 
