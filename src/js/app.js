@@ -83,18 +83,37 @@ function startApp(provider) {
 
     reserves = await getReserves(LP_contract);
     console.log(reserves)
-    Reserves_token0.innerHTML = `${parseFloat(ethers.utils.formatEther(reserves[0])).toFixed(4)} MATIC` || 'Not able to get accounts'; //what if reserves undefined?
-    Reserves_token1.innerHTML = `${parseFloat(ethers.utils.formatEther(reserves[1])).toFixed(4)} YELD` || 'Not able to get accounts';
+    Reserves_token0.innerHTML = `${parseFloat(ethers.utils.formatEther(reserves[0])).toFixed(4)} ${token0_symbol}` || 'Not able to get accounts'; //what if reserves undefined?
+    Reserves_token1.innerHTML = `${parseFloat(ethers.utils.formatEther(reserves[1])).toFixed(4)} ${token1_symbol}` || 'Not able to get accounts';
 
     total_supply_LP = await getTotalSupply(LP_contract);
     console.log(total_supply_LP)
     totalSupplyLP.innerHTML = `${parseFloat(ethers.utils.formatEther(total_supply_LP)).toFixed(4)} LP tokens` || 'Not able to get accounts';
 
     exchangeRate = reserves[0].div(reserves[1])
-    exchangeRate.innerHTML = exchangeRate || 'Not able to get accounts';
+    displayExchangeRate.innerHTML = exchangeRate || 'Not able to get accounts';
     
-    total_pool_value = ethers.utils.formatEther(reserves[0]) *1.12 + ethers.utils.formatEther(reserves[1])*exchangeRate*1.12
+    if (token0_symbol == "WMATIC" || "MATIC") {
+      usd_rate = await getExchangeRate(MATIC_USD_ORACLE);
+    } else if (token0_symbol == "WBTC" || "BTC") {
+      usd_rate = await getExchangeRate(BTC_USD_ORACLE);
+    } else if (token0_symbol == "WETH" || "ETH") {
+      usd_rate = await getExchangeRate(ETH_USD_ORACLE);
+    } else if (token1_symbol == "WMATIC" || "MATIC") {
+      usd_rate = await getExchangeRate(MATIC_USD_ORACLE);
+      usd_rate = 1/usd_rate;
+    } else if (token1_symbol == "WBTC" || "BTC") {
+      usd_rate = await getExchangeRate(BTC_USD_ORACLE);
+      usd_rate = 1/usd_rate;
+    } else if (token1_symbol == "WETH" || "ETH") {
+      usd_rate = await getExchangeRate(ETH_USD_ORACLE);
+      usd_rate = 1/usd_rate;
+    }
+    usd_rate = (usd_rate.toNumber())/10**8;
+
+    total_pool_value = ethers.utils.formatEther(reserves[0]) *usd_rate + ethers.utils.formatEther(reserves[1])*exchangeRate*usd_rate;
     TOTALInUsd.innerHTML = `$ ${ethers.utils.commify(parseFloat(total_pool_value).toFixed(2))}` || 'Not able to get accounts'
+    
     $("#ourButton").click(function(){ 
       var my_LP_tokens = $("#LPtokens").val();    
       });
@@ -364,16 +383,15 @@ async function getTokenSymbol(token_address) {
   }
 }
 
-// async function getExchangeRate(oracle_address) {
-//   var oracle = new ethers.Contract(oracle_address, CHAINLINK_ORACLE_ABI, provider);
-//   try {
-//     var exchangeRate = await oracle.latestAnswer();
-//     exchangeRate = exchangeRate.div(10 ** 8);
-//     return exchangeRate;
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
+async function getExchangeRate(oracle_address) {
+  var oracle = new ethers.Contract(oracle_address, CHAINLINK_ORACLE_ABI, provider);
+  try {
+    var exchangeRate = await oracle.latestAnswer();
+    return exchangeRate; //note - sometimes the output needs to be divided by number of decimals!
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 // async function getDecimals(token_address) {
 //   var tokenContract = new ethers.Contract(token_address, abi, provider)
