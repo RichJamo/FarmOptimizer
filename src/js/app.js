@@ -84,12 +84,11 @@ function startApp(provider) {
     reserves = await getReserves(LP_contract);
     console.log(reserves)
     Reserves_token0.innerHTML = `${parseFloat(ethers.utils.formatEther(reserves[0])).toFixed(4)} MATIC` || 'Not able to get accounts'; //what if reserves undefined?
+    Reserves_token1.innerHTML = `${parseFloat(ethers.utils.formatEther(reserves[1])).toFixed(4)} YELD` || 'Not able to get accounts';
 
     total_supply_LP = await getTotalSupply(LP_contract);
     console.log(total_supply_LP)
     totalSupplyLP.innerHTML = `${parseFloat(ethers.utils.formatEther(total_supply_LP)).toFixed(4)} LP tokens` || 'Not able to get accounts';
-
-    Reserves_token0.innerHTML = `${parseFloat(ethers.utils.formatEther(reserves[1])).toFixed(4)} YELD` || 'Not able to get accounts';
 
     exchangeRate = reserves[0].div(reserves[1])
     exchangeRate.innerHTML = exchangeRate || 'Not able to get accounts';
