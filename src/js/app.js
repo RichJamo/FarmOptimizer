@@ -77,46 +77,71 @@ function startApp(provider) {
     var token_addresses = await getTokenAddresses(LP_contract);
     var token0_symbol = await getTokenSymbol(token_addresses[0]);
     var token1_symbol = await getTokenSymbol(token_addresses[1]);
+    var token0_decimals = await getDecimals(token_addresses[0]);
+    var token1_decimals = await getDecimals(token_addresses[1]);
+    var pair_decimals = await getDecimals(LP_contract);
+
     console.log(token0_symbol);
 
     LP_name.innerHTML = `${token0_symbol}-${token1_symbol}`;
 
     reserves = await getReserves(LP_contract);
     console.log(reserves)
-    Reserves_token0.innerHTML = `${parseFloat(ethers.utils.formatEther(reserves[0])).toFixed(4)} ${token0_symbol}` || 'Not able to get accounts'; //what if reserves undefined?
-    Reserves_token1.innerHTML = `${parseFloat(ethers.utils.formatEther(reserves[1])).toFixed(4)} ${token1_symbol}` || 'Not able to get accounts';
+    Reserves_token0.innerHTML = `${parseFloat(ethers.utils.formatUnits(reserves[0], token0_decimals)).toFixed(4)} ${token0_symbol}` || 'Not able to get accounts'; //what if reserves undefined?
+    Reserves_token1.innerHTML = `${parseFloat(ethers.utils.formatUnits(reserves[1], token1_decimals)).toFixed(4)} ${token1_symbol}` || 'Not able to get accounts';
 
     total_supply_LP = await getTotalSupply(LP_contract);
     console.log(total_supply_LP)
-    totalSupplyLP.innerHTML = `${parseFloat(ethers.utils.formatEther(total_supply_LP)).toFixed(4)} LP tokens` || 'Not able to get accounts';
+    totalSupplyLP.innerHTML = `${parseFloat(ethers.utils.formatUnits(total_supply_LP, pair_decimals)).toFixed(6)} LP tokens` || 'Not able to get accounts';
 
-    exchangeRate = reserves[0].div(reserves[1])
-    displayExchangeRate.innerHTML = exchangeRate || 'Not able to get accounts';
+    bignumber0 = ethers.utils.parseUnits("1.0", token0_decimals);
+    bignumber1 = ethers.utils.parseUnits("1.0", token1_decimals);
+    // bignumber2 = ethers.utils.parseUnits("1.0", token0_decimals);
+
+    exchangeRate = reserves[0].div(bignumber0) / reserves[1].div(bignumber1)
+    displayExchangeRate.innerHTML = `1 ${token1_symbol} = ${exchangeRate.toFixed(2)} ${token0_symbol}` || 'Not able to get accounts';
     
-    if (token0_symbol == "WMATIC" || "MATIC") {
+    bignumber0 = ethers.utils.parseUnits("1.0", token0_decimals);
+    bignumber1 = ethers.utils.parseUnits("1.0", token1_decimals);
+    // bignumber2 = ethers.utils.parseUnits("1.0", token0_decimals);
+
+    if (token0_symbol === "USDC"  || token0_symbol === "USDT" || token0_symbol === "DAI") {
+      usd_rate = 1;
+      total_pool_value = reserves[0].div(bignumber0) *usd_rate *2;
+    } 
+    else if (token1_symbol === "USDC"  || token1_symbol === "USDT" || token1_symbol === "DAI") {
+      usd_rate = 1;
+      total_pool_value = reserves[1].div(bignumber1) *usd_rate *2;
+    } 
+    else if (token0_symbol === "WMATIC" || token0_symbol === "MATIC") {
       usd_rate = await getExchangeRate(MATIC_USD_ORACLE);
       usd_rate = (usd_rate.toNumber())/10**8;
-      total_pool_value = ethers.utils.formatEther(reserves[0]) *usd_rate *2;
-    } else if (token0_symbol == "WBTC" || "BTC") {
+      total_pool_value = reserves[0].div(bignumber0) *usd_rate *2;
+    } 
+    else if (token0_symbol === "WBTC" || token0_symbol === "BTC") {
       usd_rate = await getExchangeRate(BTC_USD_ORACLE);
       usd_rate = (usd_rate.toNumber())/10**8;
-      total_pool_value = ethers.utils.formatEther(reserves[0]) *usd_rate *2;
-    } else if (token0_symbol == "WETH" || "ETH") {
+      total_pool_value = reserves[0].div(bignumber0) *usd_rate *2;;
+    } 
+    else if (token0_symbol === "WETH" || token0_symbol === "ETH") {
       usd_rate = await getExchangeRate(ETH_USD_ORACLE);
       usd_rate = (usd_rate.toNumber())/10**8;
-      total_pool_value = ethers.utils.formatEther(reserves[0]) *usd_rate *2;
-    } else if (token1_symbol == "WMATIC" || "MATIC") {
+      total_pool_value = reserves[0].div(bignumber0) *usd_rate *2;
+    } 
+    else if (token1_symbol === "WMATIC" || token1_symbol === "MATIC") {
       usd_rate = await getExchangeRate(MATIC_USD_ORACLE);
       usd_rate = (usd_rate.toNumber())/10**8;
-      total_pool_value = ethers.utils.formatEther(reserves[1]) *usd_rate *2;
-    } else if (token1_symbol == "WBTC" || "BTC") {
+      total_pool_value = reserves[1].div(bignumber1) *usd_rate *2;
+    } 
+    else if (token1_symbol === "WBTC" || token1_symbol === "BTC") {
       usd_rate = await getExchangeRate(BTC_USD_ORACLE);
       usd_rate = (usd_rate.toNumber())/10**8;
-      total_pool_value = ethers.utils.formatEther(reserves[1]) *usd_rate *2;
-    } else if (token1_symbol == "WETH" || "ETH") {
+      total_pool_value = reserves[1].div(bignumber1) *usd_rate *2;
+    } 
+    else if (token1_symbol === "WETH" || token1_symbol === "ETH") {
       usd_rate = await getExchangeRate(ETH_USD_ORACLE);
       usd_rate = (usd_rate.toNumber())/10**8;
-      total_pool_value = ethers.utils.formatEther(reserves[1]) *usd_rate *2;
+      total_pool_value = reserves[1].div(bignumber1) *usd_rate *2;
     }
     TOTALInUsd.innerHTML = `$ ${ethers.utils.commify(parseFloat(total_pool_value).toFixed(2))}` || 'Not able to get accounts'
     
@@ -399,16 +424,16 @@ async function getExchangeRate(oracle_address) {
   }
 }
 
-// async function getDecimals(token_address) {
-//   var tokenContract = new ethers.Contract(token_address, abi, provider)
-//   // check how many decimals that token has
-//   try {
-//     var decimals = await tokenContract.decimals();//need to catch an error here - perhaps make this it's own function!
-//     return decimals;
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
+async function getDecimals(token_address) {
+  var tokenContract = new ethers.Contract(token_address, abi, provider)
+  // check how many decimals that token has
+  try {
+    var decimals = await tokenContract.decimals();//need to catch an error here - perhaps make this it's own function!
+    return decimals;
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 // async function allowance(token_address, router_address) {
 //   // create a new instance of a contract
